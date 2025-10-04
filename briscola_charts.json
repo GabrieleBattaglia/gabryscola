@@ -1,0 +1,48 @@
+[
+    {
+        "nome": "IA-Xihexi",
+        "wins": 6,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 0,
+        "data": "04/10/2025"
+    },
+    {
+        "nome": "IA-Yihoyi",
+        "wins": 2,
+        "losses": 0,
+        "punti_totali": 218,
+        "data": "04/10/2025"
+    },
+    {
+        "nome": "Gabryt9",
+        "wins": 2,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 152,
+        "data": "04/10/2025"
+    },
+    {
+        "nome": "Gabryt10",
+        "wins": 2,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 134,
+        "data": "04/10/2025"
+    },
+    {
+        "nome": "Gabryt7",
+        "wins": 2,
+        "losses": 0,
+        "punti_totali": 126,
+        "data": "04/10/2025"
+    },
+    {
+        "nome": "IA-Quguqu",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 193,
+        "data": "04/10/2025"
+    }
+]
