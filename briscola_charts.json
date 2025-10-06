@@ -8,6 +8,14 @@
         "data": "04/10/2025"
     },
     {
+        "nome": "IA-Gahaba",
+        "wins": 3,
+        "ties": 0,
+        "losses": 2,
+        "punti_totali": 289,
+        "data": "05/10/2025"
+    },
+    {
         "nome": "IA-Yihoyi",
         "wins": 2,
         "losses": 0,
@@ -44,5 +52,37 @@
         "losses": 1,
         "punti_totali": 193,
         "data": "04/10/2025"
+    },
+    {
+        "nome": "IA-Vuvica",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 78,
+        "data": "05/10/2025"
+    },
+    {
+        "nome": "Gabryt18",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 65,
+        "data": "05/10/2025"
+    },
+    {
+        "nome": "IA-Sasigu",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 63,
+        "data": "05/10/2025"
+    },
+    {
+        "nome": "IA-Yicafe",
+        "wins": 1,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 144,
+        "data": "05/10/2025"
     }
 ]
