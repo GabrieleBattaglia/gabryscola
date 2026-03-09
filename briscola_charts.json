@@ -55,6 +55,14 @@
         "data": "04/10/2025"
     },
     {
+        "nome": "Stellito",
+        "wins": 2,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 139,
+        "data": "06/03/2026"
+    },
+    {
         "nome": "Gabryt10",
         "wins": 2,
         "ties": 0,
@@ -70,12 +78,36 @@
         "data": "04/10/2025"
     },
     {
+        "nome": "Handpan",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 208,
+        "data": "08/03/2026"
+    },
+    {
+        "nome": "IA-Teyalu",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 206,
+        "data": "07/03/2026"
+    },
+    {
         "nome": "IA-Quguqu",
         "wins": 2,
         "ties": 0,
         "losses": 1,
         "punti_totali": 193,
         "data": "04/10/2025"
+    },
+    {
+        "nome": "Primavera2",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 80,
+        "data": "07/03/2026"
     },
     {
         "nome": "IA-Vuvica",
