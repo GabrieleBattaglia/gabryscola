@@ -126,6 +126,14 @@
         "data": "05/10/2025"
     },
     {
+        "nome": "IA-Qusemu",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 65,
+        "data": "10/03/2026"
+    },
+    {
         "nome": "IA-Sasigu",
         "wins": 1,
         "ties": 0,
