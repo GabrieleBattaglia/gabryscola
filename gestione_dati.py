@@ -34,7 +34,7 @@ def save_classifica(classifica):
 
 
 def update_and_display_classifica(
-    classifica, winner_name, wins, ties, losses, total_points
+    classifica, winner_name, wins, ties, losses, total_points, partite_match
 ):
     new_entry = {
         "nome": winner_name,
@@ -42,35 +42,37 @@ def update_and_display_classifica(
         "ties": ties,
         "losses": losses,
         "punti_totali": total_points,
+        "partite_match": partite_match,
         "data": date.today().strftime("%d/%m/%Y"),
     }
     classifica.append(new_entry)
 
+    classifica_filtrata = [
+        e for e in classifica if e.get("partite_match") == partite_match
+    ]
+
     def get_sort_key(entry):
         w = entry.get("wins", 0)
-        t = entry.get("ties", 0)
-        losses = entry.get("losses", 0)
+        l = entry.get("losses", 0)
         p = entry.get("punti_totali", 0)
-        match_points = (w * 1.0) + (t * 0.5)
-        return (match_points, w, -losses, p)
+        tot = w + l
+        win_rate = (w / tot) if tot > 0 else 0.0
+        return (win_rate, p)
 
-    classifica.sort(key=get_sort_key, reverse=True)
-    classifica = classifica[:CLASSIFICA_MAX_VOCI]
+    classifica_filtrata.sort(key=get_sort_key, reverse=True)
+    classifica_filtrata = classifica_filtrata[:CLASSIFICA_MAX_VOCI]
 
-    print("\n" + "=" * 72)
-    print(" " * 30 + "CLASSIFICA" + " " * 32)
-    print("=" * 72)
+    print(f"\nClassifica Match al meglio di {partite_match}")
     print(f"{'Pos.':<5}{'Nome':<20}{'Risultato (V-P-S)':<20}{'Punti Tot.':<12}{'Data'}")
-    print("-" * 72)
-    for i, entry in enumerate(classifica, 1):
+    for i, entry in enumerate(classifica_filtrata, 1):
         pos = f"{i}."
         nome = entry.get("nome", "N/D")
         w = entry.get("wins", 0)
         t = entry.get("ties", 0)
-        losses = entry.get("losses", 0)
-        match_score_str = f"{w}-{t}-{losses}"
+        l = entry.get("losses", 0)
+        match_score_str = f"{w}-{t}-{l}"
         punti = entry.get("punti_totali", 0)
         data_partita = entry.get("data", "N/D")
         print(f"{pos:<5}{nome:<20}{match_score_str:<20}{punti:<12}{data_partita}")
-    print("-" * 72)
     return classifica
+

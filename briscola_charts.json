@@ -24,6 +24,14 @@
         "data": "08/10/2025"
     },
     {
+        "nome": "Opus4.7",
+        "wins": 3,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 272,
+        "data": "27/05/2026"
+    },
+    {
         "nome": "IA-Timayo",
         "wins": 3,
         "ties": 0,
@@ -53,6 +61,14 @@
         "losses": 0,
         "punti_totali": 218,
         "data": "04/10/2025"
+    },
+    {
+        "nome": "Istruttore-Ib",
+        "wins": 2,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 153,
+        "data": "24/05/2026"
     },
     {
         "nome": "Gabryt9",
@@ -156,5 +172,14 @@
         "losses": 1,
         "punti_totali": 144,
         "data": "05/10/2025"
+    },
+    {
+        "nome": "Gabryagy",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 194,
+        "partite_match": 3,
+        "data": "27/05/2026"
     }
 ]

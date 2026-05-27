@@ -4,8 +4,8 @@ from giocatore import Giocatore
 from ia_perfetta import IAPerfetta
 from gestione_dati import generate_ai_name
 from GBUtils import key
-
 from version import VERSION, DATE, AUTHOR
+from suoni import play_event
 
 
 class MotoreBriscola:
@@ -32,7 +32,7 @@ class MotoreBriscola:
             self.log_partita.append(messaggio)
 
     def _decidi_primo_giocatore_match(self):
-        print("\n--- Si decide chi inizia il match ---")
+        print("\nSi decide chi inizia il match")
         mazzo_temp = Mazzo()
         mazzo_temp.mescola_mazzo()
         carta_umano = mazzo_temp.pesca(1)[0]
@@ -48,8 +48,9 @@ class MotoreBriscola:
         else:
             self.primo_giocatore_del_match = self.giocatore_pc
             print(f"{self.giocatore_pc.nome} ha la carta più alta, inizia lui.")
-        print("-------------------------------------\n")
+        print()
         time.sleep(0.5)
+
 
     def _reset_e_prepara_partita(self):
         self.mazzo = Mazzo()
@@ -63,6 +64,7 @@ class MotoreBriscola:
         self.mazzo.carte.append(self.briscola)
         print(f"La carta Briscola è: {self.briscola.nome}")
         self._log(f"BRISCOLA {self.briscola.desc_breve}")
+        self.ia = IAPerfetta(self.briscola, self.mazzo_completo)
 
     def _stampa_prompt_giocatore(self):
         mano_estesa_str = (
@@ -130,13 +132,15 @@ class MotoreBriscola:
     def gioca_partita(self, giocatore_di_mano):
         self._reset_e_prepara_partita()
         print(
-            f"\n--- Inizia la partita! Il primo a giocare è {giocatore_di_mano.nome}. ---"
+            f"\nInizia la partita! Il primo a giocare è {giocatore_di_mano.nome}."
         )
         self._log(f"INIZIO_PARTITA MANO_A {giocatore_di_mano.nome}")
 
         mano_n = 1
         while len(self.giocatore_umano.mazzetto) + len(self.giocatore_pc.mazzetto) < 40:
-            print(f"\n--- Mano n.{mano_n} ---")
+            print(f"\nMano {mano_n}")
+
+            play_event("nuovo_turno")
             self._log(f"\nMANO {mano_n}")
 
             mano_pc_log = " ".join([c.desc_breve for c in self.giocatore_pc.mano])
@@ -152,25 +156,27 @@ class MotoreBriscola:
                 else (self.giocatore_pc, self.giocatore_umano)
             )
 
+            carta_umano = None
+            tavolo_prima_umano = None
             for giocatore in giocatori:
                 if giocatore == self.giocatore_umano:
+                    tavolo_prima_umano = list(self.tavolo)
                     carta = self._stampa_prompt_giocatore()
+                    carta_umano = carta
                 else:
-                    carta = IAPerfetta.scegli_carta(
-                        self.briscola,
+                    carta = self.ia.scegli_carta(
                         self.tavolo,
                         self.giocatore_pc.mano,
-                        self.mazzo_completo,
                         self.carte_uscite,
                         self.giocatore_pc.calcola_punteggio(),
                         self.giocatore_umano.calcola_punteggio(),
+                        len(self.mazzo),
                     )
                     self.giocatore_pc.mano.remove(carta)
-
                 if carta == "FORFEIT":
                     return "FORFEIT", 0, 0
-
                 print(f"{giocatore.nome} gioca: {carta.nome}")
+                play_event("gioco_carta")
                 self._log(f"GIOCA {giocatore.nome} {carta.desc_breve}")
                 self.tavolo.append(carta)
 
@@ -182,8 +188,21 @@ class MotoreBriscola:
             )
             vincitore_mano.mazzetto.extend(self.tavolo)
             self.carte_uscite.update(self.tavolo)
-
+            # Aggiorna inferenza bayesiana dell'IA
+            if carta_umano is not None:
+                incognite_ia = [
+                    c for c in self.mazzo_completo
+                    if c not in self.carte_uscite and c not in self.giocatore_pc.mano
+                ]
+                self.ia.osserva_giocata_umano(
+                    carta_umano, tavolo_prima_umano,
+                    incognite_ia, len(self.mazzo) > 0
+                )
             print(f"{vincitore_mano.nome} vince la mano e prende {punti_presi} punti.")
+            if vincitore_mano == self.giocatore_umano:
+                play_event("presa_mia")
+            else:
+                play_event("presa_avversario")
             self._log(f"PRENDE {vincitore_mano.nome} PUNTI {punti_presi}")
 
             if len(self.mazzo) > 0:
@@ -198,7 +217,8 @@ class MotoreBriscola:
 
         punti_umano = self.giocatore_umano.calcola_punteggio()
         punti_pc = self.giocatore_pc.calcola_punteggio()
-        print("\n" + "=" * 40 + "\nPARTITA TERMINATA!\n" + "=" * 40)
+        print("\nPartita terminata!")
+
         print(
             f"PUNTEGGIO PARTITA:\n   - {self.giocatore_umano.nome}: {punti_umano} punti\n   - {self.giocatore_pc.nome}: {punti_pc} punti"
         )
