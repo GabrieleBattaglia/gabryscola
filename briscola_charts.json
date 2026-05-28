@@ -181,5 +181,14 @@
         "punti_totali": 194,
         "partite_match": 3,
         "data": "27/05/2026"
+    },
+    {
+        "nome": "IA-Gifixa",
+        "wins": 4,
+        "ties": 0,
+        "losses": 2,
+        "punti_totali": 379,
+        "partite_match": 7,
+        "data": "27/05/2026"
     }
 ]
