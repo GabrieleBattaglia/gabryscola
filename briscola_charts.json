@@ -190,5 +190,23 @@
         "punti_totali": 379,
         "partite_match": 7,
         "data": "27/05/2026"
+    },
+    {
+        "nome": "IA-Koquni",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 208,
+        "partite_match": 3,
+        "data": "28/05/2026"
+    },
+    {
+        "nome": "Ufficietto2",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 215,
+        "partite_match": 5,
+        "data": "28/05/2026"
     }
 ]
