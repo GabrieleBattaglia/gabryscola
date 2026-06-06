@@ -208,5 +208,14 @@
         "punti_totali": 215,
         "partite_match": 5,
         "data": "28/05/2026"
+    },
+    {
+        "nome": "Istuttore",
+        "wins": 4,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 287,
+        "partite_match": 7,
+        "data": "31/05/2026"
     }
 ]
