@@ -1,16 +1,19 @@
-import os
-import json
-import GBUtils
+# Gabryscola, i suoni: la mappa fra gli eventi del gioco e i preset condivisi.
+# Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Opus 5, modalita' auto).
+# 03/09/2026: la lettura della collezione e' passata ad Acusticator.
+
+"""Collega gli eventi del gioco ai suoni della collezione condivisa.
+
+Fino alla 3.1.0 questo file si leggeva da solo Acu_Collection.json e si
+riscriveva la conversione dei volumi, che nella collezione sono scarti
+rispetto alla base 0.5 mentre il motore vuole il valore assoluto. Le
+stesse quindici righe stavano identiche anche in batnav e in Terminal
+Beast: ora quel mestiere lo fa Acusticator, e qui resta soltanto cio' che
+e' proprio di Gabryscola, cioe' quale suono va con quale evento.
+"""
+
 from GBUtils import Acusticator
-DEFAULT_VOL = 0.5
-_db = {}
-try:
-    gbutils_dir = os.path.dirname(GBUtils.__file__)
-    db_path = os.path.join(gbutils_dir, "Acu_Collection.json")
-    with open(db_path, "r", encoding="utf-8") as f:
-        _db = json.load(f)
-except Exception:
-    pass
+
 EVENT_MAP = {
     "avvio": "gabryscola_avvio",
     "inserimento_nome": "gabryscola_conferma_nome",
@@ -23,22 +26,18 @@ EVENT_MAP = {
     "mostra_classifica": "apertura",
     "chiusura": "gabryscola_chiusura",
     "nuovo_turno": "gabryscola_nuovo_turno",
-    "nuova_partita": "partenza"
+    "nuova_partita": "partenza",
 }
+
+
 def play_preset_by_name(preset_name, sync=False):
-    try:
-        preset_data = _db.get(preset_name)
-        if not preset_data:
-            return
-        score_flat = []
-        for q in preset_data["score"]:
-            note, dur, pan, vol_delta = q
-            vol = max(0.0, min(1.0, DEFAULT_VOL + vol_delta))
-            score_flat.extend([note, dur, pan, vol])
-        Acusticator(score_flat, kind=preset_data["kind"], adsr=preset_data["adsr"], sync=sync)
-    except Exception:
-        pass
+    """Suona un preset della collezione condivisa chiamandolo per nome."""
+    return Acusticator.play(preset_name, sync=sync)
+
+
 def play_event(event_name, sync=False):
+    """Suona il preset legato a un evento del gioco."""
     preset_name = EVENT_MAP.get(event_name)
-    if preset_name:
-        play_preset_by_name(preset_name, sync=sync)
+    if not preset_name:
+        return False
+    return Acusticator.play(preset_name, sync=sync)
