@@ -1,293 +1,288 @@
+# Gabryscola, la Briscola da riga di comando contro l'intelligenza artificiale.
+# Studiata per chi usa uno screen reader e per il display braille.
+# Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
+# 08/09/2026: revisione 1 del refactoring generale. Messaggi alla seconda
+# persona e senza decorazioni, classifica con le sole trenta migliori e senza
+# gli abbandoni, ingressi con dgt e key, controllo degli aggiornamenti, stato
+# del match passato al cervello, statistiche del calcolatore a fine match.
+
+import faulthandler
+import gc
 import math
-import time
 import sys
+import time
 from datetime import datetime
-from motore_briscola import MotoreBriscola
+
+from GBUtils import dgt, gestisci_aggiornamento, key
+
 from gestione_dati import (
+    NOME_MAX,
+    cartella_programma,
+    inserisci_in_classifica,
     load_classifica,
-    update_and_display_classifica,
+    nuova_voce,
+    posizione_in_classifica,
+    pulisci_nome,
+    righe_classifica,
     save_classifica,
 )
+from motore_briscola import FORFEIT, MotoreBriscola
 from suoni import play_event
+from version import VERSION
+
+APP_NAME = "gabryscola"
+API_RELEASE = "https://api.github.com/repos/GabrieleBattaglia/gabryscola/releases/latest"
+PARTITE_MIN = 1
+PARTITE_MAX = 11
+PAUSA_FRA_PARTITE = 1.5
 
 
-def stampa_riepilogo_match(
-    gioco, risultati, punti_totali, numero_partite_match, partite_giocate
-):
-    partite_rimanenti = numero_partite_match - partite_giocate
-    if partite_rimanenti <= 0:
+def _numero(valore):
+    """I punti del match, con la virgola dove serve: 1, 1,5, 2."""
+    if valore == int(valore):
+        return str(int(valore))
+    return str(valore).replace(".", ",")
+
+
+def _conta(n, singolare, plurale):
+    return f"{_numero(n)} {singolare if n == 1 else plurale}"
+
+
+def punti_match(score):
+    return score["wins"] + 0.5 * score["ties"]
+
+
+def frase_traguardo(mancanti, rimaste, nome=None):
+    """Quanto manca al traguardo del match, a te se nome e' None, altrimenti a nome."""
+    if mancanti <= 0:
+        return "Hai raggiunto il traguardo del match." if nome is None else f"{nome} ha raggiunto il traguardo del match."
+    necessarie = math.ceil(mancanti)
+    if necessarie > rimaste:
+        return "Per te la rimonta è impossibile." if nome is None else f"Per {nome} la rimonta è impossibile."
+    if necessarie == rimaste:
+        if nome is None:
+            return f"Devi vincerle tutte: {necessarie} su {rimaste}."
+        return f"{nome} deve vincerle tutte: {necessarie} su {rimaste}."
+    testo_punti = "mezzo punto" if mancanti == 0.5 else _conta(mancanti, "punto", "punti")
+    verbo = "manca" if mancanti <= 1 else "mancano"
+    vittorie = _conta(necessarie, "vittoria", "vittorie")
+    if nome is None:
+        return f"Ti {verbo} {testo_punti}: almeno {vittorie} su {rimaste}."
+    return f"A {nome} {verbo} {testo_punti}: almeno {vittorie} su {rimaste}."
+
+
+def stampa_riepilogo_match(gioco, risultati, numero_partite_match, partite_giocate):
+    rimaste = numero_partite_match - partite_giocate
+    if rimaste <= 0:
         return
-
-    score_umano = risultati[gioco.giocatore_umano.nome]
-    score_pc = risultati[gioco.giocatore_pc.nome]
-    punti_match_umano = (score_umano["wins"] * 1.0) + (score_umano["ties"] * 0.5)
-    punti_match_pc = (score_pc["wins"] * 1.0) + (score_pc["ties"] * 0.5)
-    punti_target_vittoria = (numero_partite_match / 2.0) + 0.5
-
-    def fmt(v):
-        return int(v) if v % 1 == 0 else v
-
+    pc = gioco.giocatore_pc.nome
+    pm_umano = punti_match(risultati[gioco.giocatore_umano.nome])
+    pm_pc = punti_match(risultati[pc])
+    traguardo = numero_partite_match / 2 + 0.5
+    play_event("riepilogo")
     print(
-        f"\nMatch: {gioco.giocatore_umano.nome} {fmt(punti_match_umano)} - "
-        f"{gioco.giocatore_pc.nome} {fmt(punti_match_pc)} "
-        f"(rimaste {partite_rimanenti} di {numero_partite_match})"
+        f"Match: tu {_numero(pm_umano)}, {pc} {_numero(pm_pc)}, "
+        f"{_conta(rimaste, 'partita rimasta', 'partite rimaste')} su {numero_partite_match}."
     )
+    print(frase_traguardo(traguardo - pm_umano, rimaste))
+    print(frase_traguardo(traguardo - pm_pc, rimaste, pc))
 
-    punti_mancanti_umano = punti_target_vittoria - punti_match_umano
-    if punti_mancanti_umano <= 0:
-        msg_umano = "In forte vantaggio, mantieni la concentrazione."
+
+def _aggiorna_classifica(gioco, vincitore, risultato, punti_totali, numero_partite_match):
+    """Decide se il vincitore entra, chiede il nome se serve, salva e legge la classifica."""
+    umano = vincitore is gioco.giocatore_umano
+    classifica, avviso = load_classifica()
+    if avviso:
+        print(avviso)
+    voce = nuova_voce(
+        vincitore.nome, risultato["wins"], risultato["ties"], risultato["losses"], punti_totali, numero_partite_match
+    )
+    posizione = posizione_in_classifica(classifica, voce)
+    if posizione is None:
+        print("Il risultato non entra fra i primi trenta.")
+        play_event("classifica")
+        for riga in righe_classifica(classifica, numero_partite_match):
+            print(riga)
+        return
+    if umano:
+        play_event("entra_in_classifica")
+        print(f"Entri in classifica al posto {posizione}.")
+        nome = ""
+        while not nome:
+            nome = pulisci_nome(dgt("Il tuo nome: ", kind="s", smin=1, smax=NOME_MAX))
+            if not nome:
+                print("Serve un nome con almeno una lettera o una cifra.")
+        voce["nome"] = nome
+        play_event("conferma")
     else:
-        vittorie_necessarie = math.ceil(punti_mancanti_umano)
-        if vittorie_necessarie > partite_rimanenti:
-            msg_umano = "Rimonta matematicamente impossibile."
-        elif vittorie_necessarie == partite_rimanenti:
-            msg_umano = f"Devi vincerle tutte ({vittorie_necessarie} su {partite_rimanenti})."
-        else:
-            msg_umano = (
-                f"Mancano {fmt(punti_mancanti_umano)} punti (almeno {vittorie_necessarie} "
-                f"vittorie su {partite_rimanenti} partite)."
-            )
-    print(f"  {gioco.giocatore_umano.nome}: {msg_umano}")
-
-    punti_mancanti_pc = punti_target_vittoria - punti_match_pc
-    if punti_mancanti_pc <= 0:
-        msg_pc = "In vantaggio, attacca per recuperare."
-    else:
-        vittorie_necessarie_pc = math.ceil(punti_mancanti_pc)
-        if vittorie_necessarie_pc > partite_rimanenti:
-            msg_pc = "Rimonta matematicamente impossibile."
-        elif vittorie_necessarie_pc == partite_rimanenti:
-            msg_pc = f"Deve vincerle tutte ({vittorie_necessarie_pc} su {partite_rimanenti})."
-        else:
-            msg_pc = (
-                f"Mancano {fmt(punti_mancanti_pc)} punti (almeno {vittorie_necessarie_pc} "
-                f"vittorie su {partite_rimanenti} partite)."
-            )
-    print(f"  {gioco.giocatore_pc.nome}: {msg_pc}")
-
+        print(f"{vincitore.nome} entra in classifica al posto {posizione}.")
+    classifica = inserisci_in_classifica(classifica, voce)
+    try:
+        save_classifica(classifica)
+        play_event("salvato")
+        print("Classifica salvata.")
+    except OSError as e:
+        play_event("errore")
+        print(f"Classifica non salvata: {e}")
+    play_event("classifica")
+    for riga in righe_classifica(classifica, numero_partite_match, nuova=voce):
+        print(riga)
 
 
 def avvia_match(gioco, numero_partite_match):
-    print(f"Benvenuto a Gabryscola v{MotoreBriscola.VERSIONE}")
-    print(
-        f"Oggi {gioco.giocatore_umano.nome} sfida {gioco.giocatore_pc.nome} in un match al meglio di {numero_partite_match} partite!"
-    )
+    umano, pc = gioco.giocatore_umano, gioco.giocatore_pc
+    print(f"Sfidi {pc.nome} in un match al meglio di {numero_partite_match} partite.")
     gioco._decidi_primo_giocatore_match()
-
     risultati = {
-        gioco.giocatore_umano.nome: {"wins": 0, "ties": 0, "losses": 0},
-        gioco.giocatore_pc.nome: {"wins": 0, "ties": 0, "losses": 0},
+        umano.nome: {"wins": 0, "ties": 0, "losses": 0},
+        pc.nome: {"wins": 0, "ties": 0, "losses": 0},
     }
-    punti_totali = {gioco.giocatore_umano.nome: 0, gioco.giocatore_pc.nome: 0}
-    giocatore_di_mano_corrente = gioco.primo_giocatore_del_match
-
+    punti_totali = {umano.nome: 0, pc.nome: 0}
+    di_mano = gioco.primo_giocatore_del_match
+    score_umano, score_pc = risultati[umano.nome], risultati[pc.nome]
     for i in range(numero_partite_match):
-        print(f"\nPartita {i + 1}")
-
+        print(f"Partita {i + 1}.")
         play_event("nuova_partita")
-
-        vincitore_partita, punti_u, punti_pc = gioco.gioca_partita(
-            giocatore_di_mano_corrente
-        )
-
-        if vincitore_partita == "FORFEIT":
-            print("\nMatch abbandonato dall'utente.")
-            risultati[gioco.giocatore_pc.nome]["wins"] = numero_partite_match
-            break
-
-        punti_totali[gioco.giocatore_umano.nome] += punti_u
-        punti_totali[gioco.giocatore_pc.nome] += punti_pc
-
-        if vincitore_partita:
-            vincitore_nome = vincitore_partita.nome
-            perdente_nome = (
-                gioco.giocatore_pc.nome
-                if vincitore_partita == gioco.giocatore_umano
-                else gioco.giocatore_umano.nome
-            )
-            risultati[vincitore_nome]["wins"] += 1
-            risultati[perdente_nome]["losses"] += 1
-            print(f"\n>> {vincitore_nome} vince la partita {i + 1}! <<")
-            if vincitore_partita == gioco.giocatore_umano:
-                play_event("vittoria_partita")
-            else:
-                play_event("sconfitta_partita")
+        gioco.match = {
+            "partite": numero_partite_match,
+            "vinte_pc": score_pc["wins"],
+            "vinte_avv": score_umano["wins"],
+            "patte": score_umano["ties"],
+            "punti_pc": punti_totali[pc.nome],
+            "punti_avv": punti_totali[umano.nome],
+        }
+        vincitore, punti_u, punti_pc = gioco.gioca_partita(di_mano)
+        if vincitore == FORFEIT:
+            print("Match abbandonato: non entra in classifica.")
+            return
+        punti_totali[umano.nome] += punti_u
+        punti_totali[pc.nome] += punti_pc
+        if vincitore is umano:
+            score_umano["wins"] += 1
+            score_pc["losses"] += 1
+            print(f"Hai vinto la partita {i + 1}.")
+            play_event("vittoria_partita")
+        elif vincitore is pc:
+            score_pc["wins"] += 1
+            score_umano["losses"] += 1
+            print(f"{pc.nome} ha vinto la partita {i + 1}.")
+            play_event("sconfitta_partita")
         else:
-            risultati[gioco.giocatore_umano.nome]["ties"] += 1
-            risultati[gioco.giocatore_pc.nome]["ties"] += 1
-            print("\n>> La partita è finita in pareggio! <<")
+            score_umano["ties"] += 1
+            score_pc["ties"] += 1
+            print(f"La partita {i + 1} è patta.")
             play_event("patta_partita")
-
-        score_umano = risultati[gioco.giocatore_umano.nome]
-        score_pc = risultati[gioco.giocatore_pc.nome]
         print(
-            f"Risultato parziale (V-P-S): {gioco.giocatore_umano.nome} {score_umano['wins']}-{score_umano['ties']}-{score_umano['losses']} vs {gioco.giocatore_pc.nome} {score_pc['wins']}-{score_pc['ties']}-{score_pc['losses']}"
+            f"Parziale: {_conta(score_umano['wins'], 'vinta', 'vinte')}, "
+            f"{_conta(score_umano['ties'], 'patta', 'patte')}, "
+            f"{_conta(score_umano['losses'], 'persa', 'perse')}."
         )
-
-        stampa_riepilogo_match(
-            gioco, risultati, punti_totali, numero_partite_match, i + 1
-        )
-
-        punti_match_umano = (score_umano["wins"] * 1.0) + (score_umano["ties"] * 0.5)
-        punti_match_pc = (score_pc["wins"] * 1.0) + (score_pc["ties"] * 0.5)
-        partite_rimanenti = numero_partite_match - (i + 1)
-
-        punti_target_vittoria = (numero_partite_match / 2.0) + 0.5
-        if (
-            punti_match_umano >= punti_target_vittoria
-            or punti_match_pc >= punti_target_vittoria
-        ):
-            if abs(punti_match_umano - punti_match_pc) > partite_rimanenti:
-                print(
-                    "\nIl match termina in anticipo: la rimonta è matematicamente impossibile."
-                )
-                break
-
-        giocatore_di_mano_corrente = (
-            gioco.giocatore_pc
-            if giocatore_di_mano_corrente == gioco.giocatore_umano
-            else gioco.giocatore_umano
-        )
-        time.sleep(1.5)
-
-    print("\nMatch terminato!")
-
-    score_umano = risultati[gioco.giocatore_umano.nome]
-    score_pc = risultati[gioco.giocatore_pc.nome]
-    punti_match_umano = (score_umano["wins"] * 1.0) + (score_umano["ties"] * 0.5)
-    punti_match_pc = (score_pc["wins"] * 1.0) + (score_pc["ties"] * 0.5)
-    vincitore_match = None
-    motivo_vittoria = ""
-
-    if punti_match_umano > punti_match_pc:
-        vincitore_match = gioco.giocatore_umano
-    elif punti_match_pc > punti_match_umano:
-        vincitore_match = gioco.giocatore_pc
+        stampa_riepilogo_match(gioco, risultati, numero_partite_match, i + 1)
+        rimaste = numero_partite_match - (i + 1)
+        # Chi ha raggiunto il traguardo ha sempre un vantaggio maggiore delle
+        # partite rimaste, e viceversa: la condizione sul distacco basta.
+        if abs(punti_match(score_umano) - punti_match(score_pc)) > rimaste:
+            play_event("match_anticipato")
+            print("Il match termina in anticipo: la rimonta è impossibile.")
+            break
+        di_mano = pc if di_mano is umano else umano
+        time.sleep(PAUSA_FRA_PARTITE)
+    print("Match terminato.")
+    pm_umano, pm_pc = punti_match(score_umano), punti_match(score_pc)
+    motivo = ""
+    if pm_umano > pm_pc:
+        vincitore_match = umano
+    elif pm_pc > pm_umano:
+        vincitore_match = pc
     else:
-        punti_u = punti_totali[gioco.giocatore_umano.nome]
-        punti_pc = punti_totali[gioco.giocatore_pc.nome]
-        print(
-            f"Il match è in parità di punteggio ({punti_match_umano}-{punti_match_pc}). Si decide ai punti totali ({punti_u}-{punti_pc})."
-        )
-        if punti_u > punti_pc:
-            vincitore_match = gioco.giocatore_umano
-            motivo_vittoria = " (vittoria ai punti)"
-        elif punti_pc > punti_u:
-            vincitore_match = gioco.giocatore_pc
-            motivo_vittoria = " (vittoria ai punti)"
-
-    if vincitore_match:
-        print(
-            f"{vincitore_match.nome.upper()} hai vinto il match{motivo_vittoria}!"
-        )
-
-        res_vincitore = risultati[vincitore_match.nome]
-        classifica = load_classifica()
-
-        classifica_filtrata = [
-            e for e in classifica if e.get("partite_match") == numero_partite_match
-        ]
-
-        def get_sort_key(entry):
-            w = entry.get("wins", 0)
-            l = entry.get("losses", 0)
-            p = entry.get("punti_totali", 0)
-            tot = w + l
-            win_rate = (w / tot) if tot > 0 else 0.0
-            return (win_rate, p)
-
-        classifica_filtrata.sort(key=get_sort_key, reverse=True)
-
-        entra_in_classifica = False
-        if len(classifica_filtrata) < 30:
-            entra_in_classifica = True
+        tot_u, tot_pc = punti_totali[umano.nome], punti_totali[pc.nome]
+        print(f"Match in parità, {_numero(pm_umano)} a {_numero(pm_pc)}: decidono i punti totali, {tot_u} a {tot_pc}.")
+        motivo = " ai punti totali"
+        if tot_u > tot_pc:
+            vincitore_match = umano
+        elif tot_pc > tot_u:
+            vincitore_match = pc
         else:
-            w = res_vincitore["wins"]
-            l = res_vincitore["losses"]
-            p = punti_totali[vincitore_match.nome]
-            tot = w + l
-            new_win_rate = (w / tot) if tot > 0 else 0.0
-            new_key = (new_win_rate, p)
-
-            last_entry = classifica_filtrata[-1]
-            lw = last_entry.get("wins", 0)
-            ll = last_entry.get("losses", 0)
-            lp = last_entry.get("punti_totali", 0)
-            ltot = lw + ll
-            last_win_rate = (lw / ltot) if ltot > 0 else 0.0
-            last_key = (last_win_rate, lp)
-
-            if new_key > last_key:
-                entra_in_classifica = True
-
-        nome_salvataggio = vincitore_match.nome
-        if vincitore_match == gioco.giocatore_umano and entra_in_classifica:
-            play_event("inserimento_nome")
-            nome_input = ""
-            while not nome_input:
-                nome_input = input(
-                    "Complimenti, sei in classifica! Inserisci il tuo nome: "
-                ).strip()
-                if not nome_input:
-                    print("Il nome non può essere vuoto. Riprova.")
-            nome_salvataggio = nome_input.title()
-
-        play_event("mostra_classifica")
-        classifica_aggiornata = update_and_display_classifica(
-            classifica,
-            nome_salvataggio,
-            res_vincitore["wins"],
-            res_vincitore["ties"],
-            res_vincitore["losses"],
-            punti_totali[vincitore_match.nome],
-            numero_partite_match,
-        )
-        save_classifica(classifica_aggiornata)
-        print("\nClassifica salvata. Grazie per aver giocato!")
+            play_event("match_patta")
+            print("Match in patta assoluta, pari anche nei punti totali.")
+            return
+    if vincitore_match is umano:
+        play_event("match_vinto")
+        print(f"Hai vinto il match{motivo}.")
     else:
-        print(
-            "Incredibile! Il match è finito in PATTA ASSOLUTA, anche nei punti totali!"
-        )
+        play_event("match_perso")
+        print(f"{pc.nome} ha vinto il match{motivo}.")
+    _aggiorna_classifica(
+        gioco, vincitore_match, risultati[vincitore_match.nome], punti_totali[vincitore_match.nome], numero_partite_match
+    )
 
 
-if __name__ == "__main__":
-    args = [arg.lower() for arg in sys.argv]
+def _salva_log(gioco):
+    orario = datetime.now()
+    percorso = f"{cartella_programma()}/log_gabryscola_{orario.strftime('%Y%m%d_%H%M%S')}.txt"
+    try:
+        with open(percorso, "w", encoding="utf-8") as f:
+            f.write(f"Log del match del {orario.strftime('%d/%m/%Y %H:%M:%S')}\n")
+            f.write("\n".join(gioco.log_partita))
+        print(f"Log del match salvato in {percorso}.")
+    except OSError as e:
+        print(f"Log non salvato: {e}")
+
+
+def _statistiche_cervello(gioco):
+    s = gioco.statistiche_ia
+    if not s["decisioni"]:
+        return
+    play_event("statistiche")
+    print(
+        f"Il calcolatore ha esaminato {s['mondi']} mondi possibili "
+        f"in {s['tempo']:.0f} secondi di riflessione, "
+        f"con {s['esatte']} decisioni esatte su {s['decisioni']}."
+    )
+
+
+def main():
+    # Se il programma cade per un errore nativo, faulthandler scrive su
+    # stderr in quale punto era: senza, un crash lascia solo un codice.
+    faulthandler.enable()
+    # Python 3.14.5 su Windows e' caduto piu' volte, nelle prove lunghe,
+    # durante le raccolte del garbage collector in mezzo alla ricerca del
+    # calcolatore. Il gioco non crea cicli di riferimenti, quindi il
+    # conteggio dei riferimenti basta e il collector resta spento.
+    gc.disable()
+    args = [arg.lower() for arg in sys.argv[1:]]
     log_enabled = "logon" in args
     prompt_enabled = "noprompt" not in args
-
-    print(f"Gabryscola v{MotoreBriscola.VERSIONE}")
+    print(f"Gabryscola {MotoreBriscola.VERSIONE}.")
     play_event("avvio")
+    if gestisci_aggiornamento(APP_NAME, VERSION, API_RELEASE):
+        play_event("chiusura", sync=True)
+        return 0
     if log_enabled:
-        print(">>> Modalità LOG attivata. <<<")
+        print("Modalità log attivata.")
     if not prompt_enabled:
-        print(">>> Modalità NOPROMPT attivata. <<<")
-
-    numero_partite = 0
-    while True:
-        try:
-            num_input = input("Match al meglio di quante partite? (1-11): ").strip()
-            numero_partite = int(num_input)
-            if 1 <= numero_partite <= 11:
-                play_event("inserimento_nome")
-                break
-            else:
-                print("Per favore, inserisci un numero da 1 a 11.")
-        except ValueError:
-            print("Input non valido. Inserisci un numero.")
-
+        print("Modalità senza prompt breve attivata.")
+    print("Durante il gioco il punto di domanda apre la guida e q abbandona il match.")
+    numero_partite = dgt(
+        f"Match al meglio di quante partite? Da {PARTITE_MIN} a {PARTITE_MAX}: ",
+        kind="i",
+        imin=PARTITE_MIN,
+        imax=PARTITE_MAX,
+    )
+    play_event("conferma")
     gioco = MotoreBriscola(nome_giocatore_umano="Tu")
     gioco.log_attivo = log_enabled
     gioco.prompt_attivo = prompt_enabled
-
     avvia_match(gioco, numero_partite)
-
     if gioco.log_attivo:
-        timestamp_match = datetime.now().strftime("%Y%m%d_%H%M%S")
-        nome_file = f"log_{gioco.giocatore_umano.nome}_{timestamp_match}.txt"
-        with open(nome_file, "w", encoding="utf-8") as f:
-            f.write(f"Log Match del {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
-            f.write("\n".join(gioco.log_partita))
-        print(f"\nLog del match salvato nel file: {nome_file}")
-
+        _salva_log(gioco)
+    _statistiche_cervello(gioco)
     play_event("chiusura", sync=True)
-    input("\nPremi Invio per uscire...")
+    print("Premi un tasto per uscire.", end="", flush=True)
+    key()
+    print()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,38 @@
+PROVE A MANO, QUELLE CHE L'AI NON PUO' FARE
+Se una prova va male scrivi cosa hai visto o sentito nella riga Esito. Se va
+bene, cancella la prova. Quando il file resta vuoto si cancella anche lui.
+
+PROVA 1: UN MATCH INTERO DA SORGENTE
+Cosa fare: python gabryscola.py, un match al meglio di 3, giocato fino in fondo.
+Cosa osservare: che il match arrivi in fondo senza cadere, che ogni frase su di
+te sia alla seconda persona, che non ci siano righe vuote ne' decorazioni, che a
+fine partita e a fine match i punteggi siano detti in una frase sola, che la
+classifica venga letta a frasi di due righe per voce, e che la frase finale sui
+mondi esaminati ti interessi o ti sembri rumore.
+Se cade: nella finestra resta la traccia scritta da faulthandler, copiala qui.
+Esito:
+
+PROVA 2: I SUONI, UNO ALLA VOLTA
+Cosa fare: durante il match ascolta la sequenza dei suoni di una mano intera.
+Cosa osservare: che ogni suono finisca prima del successivo, con la carta del
+calcolatore che si sente dopo la sua riflessione e non sopra la tua; che la
+presa del calcolatore sia piu' morbida e piu' bassa di prima; che il mescolio,
+ora in rumore azzurro a raffica, sia piu' discreto; e che nessun suono venga
+distorto mentre il calcolatore riflette. Dimmi cosa va ancora alzato, abbassato
+o cambiato di carattere.
+Esito:
+
+PROVA 3: L'ABBANDONO E LA GUIDA
+Cosa fare: in una mano premi q e poi un tasto qualsiasi, poi premi il punto di
+domanda, poi q e s.
+Cosa osservare: che la prima volta si continui a giocare, che la guida si apra
+e si sfogli, e che con q e s il match finisca senza chiedere il nome e senza
+toccare la classifica.
+Esito:
+
+PROVA 4: L'ESEGUIBILE COMPILATO
+Cosa fare: dopo la release, avvia gabryscola.exe da una cartella dove GBUtils
+non c'e', e gioca almeno una partita aprendo anche la guida.
+Cosa osservare: che tutti i suoni ci siano, che la guida si apra, e che
+briscola_charts.json nasca accanto all'eseguibile. E' la prova della issue 3.
+Esito:

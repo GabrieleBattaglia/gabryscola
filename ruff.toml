@@ -1,0 +1,30 @@
+# Configurazione ruff di Gabryscola.
+# Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
+line-length = 140
+
+[lint]
+select = ["E", "F", "W", "B", "SIM", "UP", "I", "C4", "RET", "BLE", "S", "RUF", "DTZ"]
+ignore = [
+    # Righe lunghe: quasi tutti i messaggi all'utente stanno su una riga
+    # sola, e spezzarli renderebbe piu' difficile ritrovarli nel codice.
+    "E501",
+    # Lo stile di Gabriele ammette l'istruzione breve sulla stessa riga.
+    "E701",
+    "E702",
+    "E741",
+    # Date e orari sono di proposito ora locale, senza fuso: la data in
+    # classifica e il nome del file di log sono quelli del calendario e
+    # dell'orologio di chi gioca, e passare a UTC sposterebbe di un giorno
+    # i match giocati di sera.
+    "DTZ005",
+    "DTZ011",
+    # Il generatore casuale standard mescola le carte e sceglie i mondi
+    # campionati dal motore: non c'e' niente da proteggere, e la
+    # riproducibilita' con un seme fisso serve ai test.
+    "S311",
+]
+
+[lint.per-file-ignores]
+# Nelle prove l'assert e' lo strumento di pytest, non un controllo da
+# lasciare in produzione.
+"tests/*.py" = ["S101"]

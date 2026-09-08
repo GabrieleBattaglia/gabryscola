@@ -1,0 +1,92 @@
+Guida di Gabryscola
+Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
+Versione 4.0.0.
+
+1. Che cos'e'
+Gabryscola e' la briscola a due giocatori, da riga di comando, contro il
+calcolatore. E' pensata per chi usa uno screen reader: tutto cio' che
+succede viene detto a parole, ogni evento ha un suono, e il prompt di
+gioco sta in una riga corta fatta per il display braille.
+
+2. Le regole
+Si gioca con il mazzo italiano da quaranta carte. Ogni giocatore ha tre
+carte in mano. La carta scoperta in fondo al mazzo e' la briscola, e il
+suo seme batte tutti gli altri. Chi vince la mano pesca per primo, poi
+pesca l'altro, e la briscola scoperta e' l'ultima carta che si pesca.
+Vale la gerarchia asso, tre, re, cavallo, fante, sette, sei, cinque,
+quattro, due. I punti: asso undici, tre dieci, re quattro, cavallo tre,
+fante due. In tutto sono centoventi: vince chi ne fa almeno sessantuno,
+e sessanta pari e' patta.
+Non c'e' obbligo di rispondere a seme. Se le due carte sono di semi
+diversi e nessuna e' briscola, prende chi ha giocato per primo.
+
+3. Il match
+All'avvio si sceglie la lunghezza del match, da una a undici partite.
+Ogni partita vinta vale un punto, una patta mezzo punto per ciascuno.
+Chi arriva per primo a piu' della meta' dei punti vince il match, e il
+match si chiude in anticipo appena la rimonta diventa impossibile. Se
+finisce in parita' decidono i punti totali fatti in tutte le partite.
+Chi comincia la prima partita si decide pescando una carta a testa: la
+piu' alta inizia, e a parita' decide la moneta. Nelle partite seguenti
+si comincia a turno.
+
+4. Come si gioca
+A ogni mano il programma dice le carte che hai e mostra il prompt. Per
+giocare una carta premi il suo numero: 1 per la prima, 2 per la seconda,
+3 per la terza, nell'ordine in cui sono state dette. Non serve invio.
+Il punto di domanda apre questa guida. La q, oppure escape, chiede se
+vuoi abbandonare il match: s conferma, qualunque altro tasto continua.
+Un match abbandonato non entra in classifica.
+
+5. Il prompt breve
+Il prompt e' fatto per essere letto in un colpo solo sul display
+braille. Per esempio:
+R28 BAS T3C P11/6 - C 2B AC 7D >
+R28 dice che nel mazzo restano ventotto carte. B seguita dalla briscola:
+AS e' l'asso di spade. T e' la carta sul tavolo, giocata dall'avversario
+prima di te: 3C e' il tre di coppe, e un trattino vuol dire che tocca a
+te aprire. P sono i punti, prima i tuoi e poi quelli del calcolatore.
+Dopo C ci sono le tue carte, nell'ordine dei numeri da premere.
+Le carte si abbreviano con il valore seguito dalla lettera del seme: A
+asso, 2, 3 e cosi' via, 8 fante, 9 cavallo, 0 re. I semi: B bastoni, S
+spade, C coppe, D denari.
+Avviando il programma con la parola noprompt sulla riga di comando il
+prompt breve sparisce e resta soltanto il segno di maggiore.
+
+6. I suoni
+Ogni cosa che succede ha un suono. Cio' che fai tu si sente a sinistra:
+la carta che giochi, la carta che peschi, la mano che vinci. Cio' che
+fa il calcolatore si sente a destra. Cio' che e' di tutti e due, come il
+mazzo che si mescola, la briscola che si gira e l'inizio di ogni mano,
+sta al centro.
+
+7. Il calcolatore
+Il calcolatore non guarda mai le tue carte. Sa esattamente quello che
+sai tu: le carte uscite, la briscola scoperta e le carte che ha pescato.
+Su questo tiene conto di tutte le mani che potresti avere, e a ogni
+carta che giochi aggiorna le probabilita', anche ragionando su cosa
+avrebbe fatto un giocatore attento con ogni mano possibile.
+Per decidere esamina molti mondi possibili, cioe' mani tue e ordini del
+mazzo coerenti con quello che sa, e in ciascuno gioca tutte le mani
+successive contro un avversario perfetto. Sceglie la carta che gli da'
+la maggiore probabilita' di vincere la partita, tenendo conto di come
+sta andando il match: a volte gli basta una patta, a volte gli serve la
+vittoria. Nelle ultime mani la ricerca arriva in fondo e il gioco e'
+esatto. Ha due secondi di riflessione per ogni carta. A fine match dice
+quanti mondi ha esaminato.
+
+8. La classifica
+Ogni match concluso con un vincitore puo' entrare in classifica, se
+sta fra i trenta migliori dei match della stessa lunghezza. L'ordine e'
+per quota di vittorie sulle partite decise, poi per punti totali. Solo
+quando il tuo risultato entra ti viene chiesto il nome. Anche il
+calcolatore entra, con il suo nome. La classifica sta nel file
+briscola_charts.json accanto al programma, con una copia di riserva.
+
+9. Altre opzioni
+La parola logon sulla riga di comando salva un file di testo con lo
+svolgimento del match, accanto al programma.
+All'avvio il programma compilato controlla se su GitHub c'e' una
+versione nuova e propone di installarla. Al primo avvio Windows puo'
+mostrare l'avviso di SmartScreen, perche' l'eseguibile non e' firmato:
+e' normale.

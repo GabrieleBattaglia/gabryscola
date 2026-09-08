@@ -1,234 +1,241 @@
+# Gabryscola, il motore delle regole: la partita, le mani e chi le vince.
+# Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
+# 08/09/2026: mazzo di GBUtils con la briscola in testa perche' si pesca dalla
+# coda, cervello nuovo alimentato dagli eventi della partita, messaggi alla
+# seconda persona quando il soggetto e' chi gioca, moneta a parita' nel
+# sorteggio, tasto singolo per l'abbandono, guida con il punto di domanda.
+
+"""Le regole in movimento: una partita di briscola a due, mano per mano.
+
+Il motore distribuisce, chiede la carta a chi gioca, la chiede al cervello
+per il calcolatore, decide chi prende e fa pescare. Il cervello riceve ogni
+evento visibile della partita, e mai la carta pescata dall'avversario, a
+meno che non sia la briscola scoperta.
+"""
+
+import os
+import random
+import sys
 import time
-from carte import Mazzo
-from giocatore import Giocatore
-from ia_perfetta import IAPerfetta
+
+from GBUtils import key, manuale
+
 from gestione_dati import generate_ai_name
-from GBUtils import key
-from version import VERSION, DATE, AUTHOR
+from giocatore import Giocatore
+from motore_ia import TEMPO_PREDEFINITO, Cervello
+from regole import nuovo_mazzo, punti, vince_primo
 from suoni import play_event
+from version import AUTHOR, DATE, VERSION
+
+FORFEIT = "FORFEIT"
+GUIDA = "manuale.txt"
+CARTE_IN_MANO = 3
+CHIAVI_STATISTICHE = ("decisioni", "mondi", "tempo", "esatte")
 
 
 class MotoreBriscola:
-    VERSIONE = f"{VERSION} del {DATE} by {AUTHOR}"
+    VERSIONE = f"{VERSION} del {DATE}, di {AUTHOR}"
 
-    def __init__(self, nome_giocatore_umano):
-        self.mazzo_completo = Mazzo().carte[:]
-        self.mazzo = Mazzo()
+    def __init__(self, nome_giocatore_umano, tempo_riflessione=TEMPO_PREDEFINITO):
+        self.mazzo_completo = nuovo_mazzo().carte[:]
+        self.mazzo = nuovo_mazzo()
         self.giocatore_umano = Giocatore(nome_giocatore_umano)
         self.giocatore_pc = Giocatore(generate_ai_name())
         self.briscola = None
         self.tavolo = []
-        self.carte_uscite = set()
         self.primo_giocatore_del_match = None
         self.log_attivo = False
         self.prompt_attivo = True
         self.log_partita = []
+        self.tempo_riflessione = tempo_riflessione
+        self.ia = None
+        self.match = None
+        self.statistiche_ia = dict.fromkeys(CHIAVI_STATISTICHE, 0)
 
-    def _get_valore_comparativo(self, carta):
-        return Mazzo.PUNTI_BRISCOLA.get(carta.valore, 0) * 10 + carta.valore
+    @staticmethod
+    def _valore_sorteggio(carta):
+        return punti(carta) * 10 + carta.valore
 
     def _log(self, messaggio):
         if self.log_attivo:
             self.log_partita.append(messaggio)
 
     def _decidi_primo_giocatore_match(self):
-        print("\nSi decide chi inizia il match")
-        mazzo_temp = Mazzo()
+        pc = self.giocatore_pc.nome
+        print("Si decide chi inizia il match.")
+        mazzo_temp = nuovo_mazzo()
         mazzo_temp.mescola_mazzo()
         carta_umano = mazzo_temp.pesca(1)[0]
-        print(f"{self.giocatore_umano.nome} hai pescato: {carta_umano.nome}")
+        play_event("pesca_tu")
+        print(f"Hai pescato: {carta_umano.nome}.")
         carta_pc = mazzo_temp.pesca(1)[0]
-        print(f"{self.giocatore_pc.nome} ha pescato: {carta_pc.nome}")
-
-        if self._get_valore_comparativo(carta_umano) >= self._get_valore_comparativo(
-            carta_pc
-        ):
-            self.primo_giocatore_del_match = self.giocatore_umano
-            print("Hai la carta più alta, inizi tu la prima partita!")
+        play_event("pesca_pc")
+        print(f"{pc} ha pescato: {carta_pc.nome}.")
+        valore_umano = self._valore_sorteggio(carta_umano)
+        valore_pc = self._valore_sorteggio(carta_pc)
+        if valore_umano == valore_pc:
+            play_event("moneta")
+            print("Carte di pari valore: decide la moneta.")
+            primo = random.choice([self.giocatore_umano, self.giocatore_pc])
+        elif valore_umano > valore_pc:
+            primo = self.giocatore_umano
         else:
-            self.primo_giocatore_del_match = self.giocatore_pc
-            print(f"{self.giocatore_pc.nome} ha la carta più alta, inizia lui.")
-        print()
+            primo = self.giocatore_pc
+        self.primo_giocatore_del_match = primo
+        if primo is self.giocatore_umano:
+            print("Inizi tu la prima partita.")
+        else:
+            print(f"Inizia {pc} la prima partita.")
         time.sleep(0.5)
 
-
     def _reset_e_prepara_partita(self):
-        self.mazzo = Mazzo()
+        self.mazzo = nuovo_mazzo()
+        play_event("mescola")
         self.mazzo.mescola_mazzo()
         self.giocatore_umano.mano, self.giocatore_umano.mazzetto = [], []
         self.giocatore_pc.mano, self.giocatore_pc.mazzetto = [], []
-        self.carte_uscite = set()
-        self.giocatore_umano.mano = self.mazzo.pesca(3)
-        self.giocatore_pc.mano = self.mazzo.pesca(3)
+        self.giocatore_umano.mano = self.mazzo.pesca(CARTE_IN_MANO)
+        self.giocatore_pc.mano = self.mazzo.pesca(CARTE_IN_MANO)
         self.briscola = self.mazzo.pesca(1)[0]
-        self.mazzo.carte.append(self.briscola)
-        print(f"La carta Briscola è: {self.briscola.nome}")
+        # GBUtils pesca dalla coda: in testa la briscola esce per ultima.
+        self.mazzo.carte.insert(0, self.briscola)
+        play_event("briscola")
+        print(f"La briscola è: {self.briscola.nome}.")
         self._log(f"BRISCOLA {self.briscola.desc_breve}")
-        self.ia = IAPerfetta(self.briscola, self.mazzo_completo)
-
-    def _stampa_prompt_giocatore(self):
-        mano_estesa_str = (
-            "Tu hai: " + ". ".join([c.nome for c in self.giocatore_umano.mano]) + "."
+        self.ia = Cervello(
+            self.briscola, self.mazzo_completo, self.giocatore_pc.mano, tempo=self.tempo_riflessione
         )
-        print(mano_estesa_str)
-        if self.prompt_attivo:
-            carte_rimaste = len(self.mazzo)
-            briscola_breve = self.briscola.desc_breve
-            tavolo_breve = self.tavolo[0].desc_breve if self.tavolo else "-"
-            punti_tuoi = self.giocatore_umano.calcola_punteggio()
-            punti_pc = self.giocatore_pc.calcola_punteggio()
-            punti_str = f"{punti_tuoi}/{punti_pc}"
-            mano_str = " ".join([c.desc_breve for c in self.giocatore_umano.mano])
-            prompt = f"R{carte_rimaste} B{briscola_breve} T{tavolo_breve} P{punti_str} - C {mano_str} > "
-        else:
-            prompt = "> "
 
+    def _prompt(self):
+        if not self.prompt_attivo:
+            return "> "
+        carte_rimaste = len(self.mazzo)
+        tavolo_breve = self.tavolo[0].desc_breve if self.tavolo else "-"
+        punti_tuoi = self.giocatore_umano.calcola_punteggio()
+        punti_pc = self.giocatore_pc.calcola_punteggio()
+        mano_breve = " ".join(c.desc_breve for c in self.giocatore_umano.mano)
+        return f"R{carte_rimaste} B{self.briscola.desc_breve} T{tavolo_breve} P{punti_tuoi}/{punti_pc} - C {mano_breve} > "
+
+    @staticmethod
+    def _percorso_guida():
+        """La guida sta accanto ai sorgenti, e dentro l'eseguibile quando e' compilato."""
+        base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base, GUIDA)
+
+    def _mostra_guida(self):
+        play_event("manuale")
+        try:
+            manuale(nf=self._percorso_guida(), nome="Guida di Gabryscola")
+        except (OSError, ValueError) as e:
+            print(f"Guida non disponibile: {e}")
+
+    def _chiedi_carta(self):
+        """La carta scelta da chi gioca, oppure FORFEIT se abbandona."""
+        mano = self.giocatore_umano.mano
+        print("Hai in mano: " + ". ".join(c.nome for c in mano) + ".")
+        prompt = self._prompt()
         while True:
-            try:
-                print(prompt, end="", flush=True)
-                scelta = key()
-                print(scelta)
+            print(prompt, end="", flush=True)
+            scelta = key()
+            print(scelta if scelta.isprintable() else "")
+            if scelta.lower() == "q" or scelta == "\x1b":
+                play_event("domanda")
+                print("Abbandoni il match? Premi s per confermare, un altro tasto per continuare: ", end="", flush=True)
+                conferma = key()
+                print(conferma if conferma.isprintable() else "")
+                if conferma.lower() == "s":
+                    return FORFEIT
+                play_event("annullato")
+                print("Abbandono annullato, si continua.")
+                continue
+            if scelta in ("?", "h"):
+                self._mostra_guida()
+                continue
+            if scelta.isdigit() and 1 <= int(scelta) <= len(mano):
+                return mano.pop(int(scelta) - 1)
+            play_event("errore")
+            print(f"Tasto non valido: un numero da 1 a {len(mano)} gioca la carta, q abbandona, ? apre la guida.")
 
-                if scelta.lower() == "q" or scelta == "\x1b":
-                    conferma = (
-                        input("\nSei sicuro di voler abbandonare il match? (s/n): ")
-                        .lower()
-                        .strip()
-                    )
-                    if conferma == "s":
-                        return "FORFEIT"
-                    else:
-                        print("Abbandono annullato. Continua a giocare.")
-                        continue
+    def _annuncia_presa(self, vincitore, presi):
+        if vincitore is self.giocatore_umano:
+            play_event("presa_tu")
+            print(f"Vinci la mano e prendi {presi} punti." if presi else "Vinci la mano, senza punti.")
+        else:
+            play_event("presa_pc")
+            nome = self.giocatore_pc.nome
+            print(f"{nome} vince la mano e prende {presi} punti." if presi else f"{nome} vince la mano, senza punti.")
 
-                scelta_idx = int(scelta) - 1
-                if 0 <= scelta_idx < len(self.giocatore_umano.mano):
-                    return self.giocatore_umano.mano.pop(scelta_idx)
-                else:
-                    print(
-                        f"\nScelta non valida. Inserisci un numero tra 1 e {len(self.giocatore_umano.mano)}"
-                    )
-            except (ValueError, IndexError):
-                print(
-                    "\nInput non valido. Premi il numero della carta che vuoi giocare, o 'q' per abbandonare."
-                )
+    def _pesca(self, vincitore, perdente):
+        for giocatore in (vincitore, perdente):
+            carta = self.mazzo.pesca(1)[0]
+            giocatore.mano.append(carta)
+            e_briscola = carta == self.briscola
+            if giocatore is self.giocatore_pc:
+                self.ia.carta_pescata(carta, True)
+                play_event("pesca_pc")
+                if e_briscola:
+                    print(f"{self.giocatore_pc.nome} pesca la briscola.")
+            else:
+                self.ia.carta_pescata(carta if e_briscola else None, False)
+                play_event("pesca_tu")
+                print(f"Peschi: {carta.nome}." + (" È la briscola." if e_briscola else ""))
 
-    def _determina_vincitore_mano(self, carta1, giocatore1, carta2, giocatore2):
-        c1_briscola = carta1.seme_nome == self.briscola.seme_nome
-        c2_briscola = carta2.seme_nome == self.briscola.seme_nome
-        if c1_briscola and not c2_briscola:
-            return giocatore1
-        if not c1_briscola and c2_briscola:
-            return giocatore2
-        if c1_briscola and c2_briscola or carta1.seme_nome == carta2.seme_nome:
-            return (
-                giocatore1
-                if self._get_valore_comparativo(carta1)
-                > self._get_valore_comparativo(carta2)
-                else giocatore2
-            )
-        return giocatore1
+    def _accumula_statistiche(self):
+        for chiave in CHIAVI_STATISTICHE:
+            self.statistiche_ia[chiave] += self.ia.statistiche[chiave]
 
     def gioca_partita(self, giocatore_di_mano):
+        """Una partita intera. Restituisce vincitore, punti tuoi e punti del calcolatore."""
         self._reset_e_prepara_partita()
-        print(
-            f"\nInizia la partita! Il primo a giocare è {giocatore_di_mano.nome}."
-        )
+        umano, pc = self.giocatore_umano, self.giocatore_pc
+        if giocatore_di_mano is umano:
+            print("Inizia la partita: giochi per primo.")
+        else:
+            print(f"Inizia la partita: gioca per primo {pc.nome}.")
         self._log(f"INIZIO_PARTITA MANO_A {giocatore_di_mano.nome}")
-
         mano_n = 1
-        while len(self.giocatore_umano.mazzetto) + len(self.giocatore_pc.mazzetto) < 40:
-            print(f"\nMano {mano_n}")
-
+        while umano.mano:
+            print(f"Mano {mano_n}.")
             play_event("nuovo_turno")
-            self._log(f"\nMANO {mano_n}")
-
-            mano_pc_log = " ".join([c.desc_breve for c in self.giocatore_pc.mano])
-            self._log(f"MANO_IA {mano_pc_log}")
-            print(
-                f"{self.giocatore_pc.nome} ha {len(self.giocatore_pc.mano)} carte in mano."
-            )
-
+            self._log(f"MANO {mano_n}")
+            self._log("MANO_IA " + " ".join(c.desc_breve for c in pc.mano))
             self.tavolo = []
-            giocatori = (
-                (self.giocatore_umano, self.giocatore_pc)
-                if giocatore_di_mano == self.giocatore_umano
-                else (self.giocatore_pc, self.giocatore_umano)
-            )
-
-            carta_umano = None
-            tavolo_prima_umano = None
+            giocatori = (umano, pc) if giocatore_di_mano is umano else (pc, umano)
             for giocatore in giocatori:
-                if giocatore == self.giocatore_umano:
-                    tavolo_prima_umano = list(self.tavolo)
-                    carta = self._stampa_prompt_giocatore()
-                    carta_umano = carta
+                tavolo_prima = list(self.tavolo)
+                if giocatore is umano:
+                    carta = self._chiedi_carta()
+                    if carta == FORFEIT:
+                        return FORFEIT, 0, 0
+                    print(f"Giochi: {carta.nome}.")
+                    play_event("carta_tu")
                 else:
-                    carta = self.ia.scegli_carta(
-                        self.tavolo,
-                        self.giocatore_pc.mano,
-                        self.carte_uscite,
-                        self.giocatore_pc.calcola_punteggio(),
-                        self.giocatore_umano.calcola_punteggio(),
-                        len(self.mazzo),
+                    carta = self.ia.scegli(
+                        self.tavolo, pc.mano, pc.calcola_punteggio(), umano.calcola_punteggio(), len(self.mazzo), self.match
                     )
-                    self.giocatore_pc.mano.remove(carta)
-                if carta == "FORFEIT":
-                    return "FORFEIT", 0, 0
-                print(f"{giocatore.nome} gioca: {carta.nome}")
-                play_event("gioco_carta")
+                    pc.mano.remove(carta)
+                    print(f"{pc.nome} gioca: {carta.nome}.")
+                    play_event("carta_pc")
                 self._log(f"GIOCA {giocatore.nome} {carta.desc_breve}")
                 self.tavolo.append(carta)
-
-            vincitore_mano = self._determina_vincitore_mano(
-                self.tavolo[0], giocatori[0], self.tavolo[1], giocatori[1]
-            )
-            punti_presi = sum(
-                Mazzo.PUNTI_BRISCOLA.get(c.valore, 0) for c in self.tavolo
-            )
-            vincitore_mano.mazzetto.extend(self.tavolo)
-            self.carte_uscite.update(self.tavolo)
-            # Aggiorna inferenza bayesiana dell'IA
-            if carta_umano is not None:
-                incognite_ia = [
-                    c for c in self.mazzo_completo
-                    if c not in self.carte_uscite and c not in self.giocatore_pc.mano
-                ]
-                self.ia.osserva_giocata_umano(
-                    carta_umano, tavolo_prima_umano,
-                    incognite_ia, len(self.mazzo) > 0
-                )
-            print(f"{vincitore_mano.nome} vince la mano e prende {punti_presi} punti.")
-            if vincitore_mano == self.giocatore_umano:
-                play_event("presa_mia")
-            else:
-                play_event("presa_avversario")
-            self._log(f"PRENDE {vincitore_mano.nome} PUNTI {punti_presi}")
-
+                self.ia.carta_giocata(carta, giocatore is pc, tavolo_prima)
+            vincitore = giocatori[0] if vince_primo(self.tavolo[0], self.tavolo[1], self.briscola.seme_nome) else giocatori[1]
+            perdente = giocatori[1] if vincitore is giocatori[0] else giocatori[0]
+            presi = sum(punti(c) for c in self.tavolo)
+            vincitore.mazzetto.extend(self.tavolo)
+            self._annuncia_presa(vincitore, presi)
+            self._log(f"PRENDE {vincitore.nome} PUNTI {presi}")
             if len(self.mazzo) > 0:
-                perdente_mano = (
-                    giocatori[1] if vincitore_mano == giocatori[0] else giocatori[0]
-                )
-                vincitore_mano.mano.extend(self.mazzo.pesca(1))
-                perdente_mano.mano.extend(self.mazzo.pesca(1))
-
-            giocatore_di_mano = vincitore_mano
+                self._pesca(vincitore, perdente)
+            giocatore_di_mano = vincitore
             mano_n += 1
-
-        punti_umano = self.giocatore_umano.calcola_punteggio()
-        punti_pc = self.giocatore_pc.calcola_punteggio()
-        print("\nPartita terminata!")
-
-        print(
-            f"PUNTEGGIO PARTITA:\n   - {self.giocatore_umano.nome}: {punti_umano} punti\n   - {self.giocatore_pc.nome}: {punti_pc} punti"
-        )
-        self._log(
-            f"\nFINALE {self.giocatore_umano.nome} {punti_umano} - {self.giocatore_pc.nome} {punti_pc}"
-        )
-
-        if punti_umano > 60:
-            return (self.giocatore_umano, punti_umano, punti_pc)
-        elif punti_umano == 60:
-            return (None, punti_umano, punti_pc)
-        else:
-            return (self.giocatore_pc, punti_umano, punti_pc)
+        self._accumula_statistiche()
+        punti_umano = umano.calcola_punteggio()
+        punti_pc = pc.calcola_punteggio()
+        print(f"Partita terminata: hai {punti_umano} punti, {pc.nome} {punti_pc}.")
+        self._log(f"FINALE {umano.nome} {punti_umano} {pc.nome} {punti_pc}")
+        if punti_umano > punti_pc:
+            return umano, punti_umano, punti_pc
+        if punti_umano == punti_pc:
+            return None, punti_umano, punti_pc
+        return pc, punti_umano, punti_pc

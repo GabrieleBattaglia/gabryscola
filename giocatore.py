@@ -1,4 +1,8 @@
-from carte import Mazzo
+# Gabryscola, il giocatore: nome, carte in mano e mazzetto delle prese.
+# Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
+# 08/09/2026: i punti si leggono da regole, non piu' dal mazzo.
+
+from regole import punti
 
 
 class Giocatore:
@@ -8,4 +12,4 @@ class Giocatore:
         self.mazzetto = []
 
     def calcola_punteggio(self):
-        return sum(Mazzo.PUNTI_BRISCOLA.get(carta.valore, 0) for carta in self.mazzetto)
+        return sum(punti(carta) for carta in self.mazzetto)

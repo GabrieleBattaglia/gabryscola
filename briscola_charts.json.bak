@@ -126,15 +126,6 @@
         "data": "08/09/2026"
     },
     {
-        "nome": "IA-Vakepa",
-        "wins": 2,
-        "ties": 0,
-        "losses": 1,
-        "punti_totali": 233,
-        "partite_match": 3,
-        "data": "08/09/2026"
-    },
-    {
         "nome": "IA-Jiruko",
         "wins": 2,
         "ties": 0,
