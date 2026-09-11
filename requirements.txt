@@ -18,8 +18,17 @@
 # Il calcolo dei campioni audio dentro GBUtils.
 numpy>=1.26
 
+# Il filtro passabanda dei rumori di Acusticator: ogni sintesi lo importa,
+# quindi senza scipy il primo suono farebbe cadere il gioco. Issue 4.
+scipy>=1.11
+
 # Il motore audio: Acusticator di GBUtils riproduce da qui i suoni del gioco.
 sounddevice>=0.5
 
-# Il validatore, che va passato senza rilievi a ogni intervento sul codice.
+# Il controllo degli aggiornamenti all'avvio, usato da GBUtils.
+requests>=2.31
+
+# Il validatore, che va passato senza rilievi a ogni intervento sul codice,
+# e le prove automatiche della cartella tests.
 ruff>=0.6
+pytest>=8.0

@@ -94,9 +94,7 @@ def _aggiorna_classifica(gioco, vincitore, risultato, punti_totali, numero_parti
     classifica, avviso = load_classifica()
     if avviso:
         print(avviso)
-    voce = nuova_voce(
-        vincitore.nome, risultato["wins"], risultato["ties"], risultato["losses"], punti_totali, numero_partite_match
-    )
+    voce = nuova_voce(vincitore.nome, risultato["wins"], risultato["ties"], risultato["losses"], punti_totali, numero_partite_match)
     posizione = posizione_in_classifica(classifica, voce)
     if posizione is None:
         print("Il risultato non entra fra i primi trenta.")
@@ -212,9 +210,7 @@ def avvia_match(gioco, numero_partite_match):
     else:
         play_event("match_perso")
         print(f"{pc.nome} ha vinto il match{motivo}.")
-    _aggiorna_classifica(
-        gioco, vincitore_match, risultati[vincitore_match.nome], punti_totali[vincitore_match.nome], numero_partite_match
-    )
+    _aggiorna_classifica(gioco, vincitore_match, risultati[vincitore_match.nome], punti_totali[vincitore_match.nome], numero_partite_match)
 
 
 def _salva_log(gioco):

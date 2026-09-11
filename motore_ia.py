@@ -203,9 +203,7 @@ class Conoscenza:
     def incognite(self):
         """Le carte che possono stare nella mano avversaria o nel mazzo."""
         return [
-            c
-            for c in TUTTE
-            if c not in self.uscite and c not in self.viste_pc and not (c == self.briscola and self.briscola_nel_mazzo)
+            c for c in TUTTE if c not in self.uscite and c not in self.viste_pc and not (c == self.briscola and self.briscola_nel_mazzo)
         ]
 
     def _uniforme(self, n_carte):

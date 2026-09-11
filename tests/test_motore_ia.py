@@ -152,7 +152,11 @@ def test_la_ricerca_esatta_coincide_con_il_minimax_lento():
                 valori = ricerca.radice(mp, tuple(ma[1:]), mazzo, guida)
                 atteso = max(
                     (mi.PUNTI[guida] + mi.PUNTI[c] if not batte[guida][c] else 0)
-                    + _minimax_lento(batte, *mi._Ricerca._pesca(tuple(x for x in mp if x != c), tuple(ma[1:]), mazzo, not batte[guida][c]), not batte[guida][c])
+                    + _minimax_lento(
+                        batte,
+                        *mi._Ricerca._pesca(tuple(x for x in mp if x != c), tuple(ma[1:]), mazzo, not batte[guida][c]),
+                        not batte[guida][c],
+                    )
                     for c in mp
                 )
                 assert max(valori.values()) == atteso

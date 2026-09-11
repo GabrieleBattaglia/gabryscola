@@ -3,7 +3,9 @@
 Tutti i cambiamenti e le novità introdotte nelle versioni di Gabryscola.
 Il changelog nasce con la versione 4.0.0. Per le versioni precedenti il resoconto sta nella cronologia dei commit e nelle release pubblicate su GitHub.
 
-## [4.0.0] - 2026-09-08
+## [4.0.0] - 2026-09-11
+
+Pubblicata su GitHub il 2026-09-11 come release `v4.0.0`, con il solo archivio `gabryscola.zip` in allegato. Issue 3 e 4 chiuse.
 
 Revisione 1 del refactoring generale del parco software, con il motore del calcolatore riscritto da zero.
 

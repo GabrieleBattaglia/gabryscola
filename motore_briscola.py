@@ -102,9 +102,7 @@ class MotoreBriscola:
         play_event("briscola")
         print(f"La briscola è: {self.briscola.nome}.")
         self._log(f"BRISCOLA {self.briscola.desc_breve}")
-        self.ia = Cervello(
-            self.briscola, self.mazzo_completo, self.giocatore_pc.mano, tempo=self.tempo_riflessione
-        )
+        self.ia = Cervello(self.briscola, self.mazzo_completo, self.giocatore_pc.mano, tempo=self.tempo_riflessione)
 
     def _prompt(self):
         if not self.prompt_attivo:

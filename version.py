@@ -2,5 +2,5 @@
 # Autori: Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode).
 
 VERSION = "4.0.0"
-DATE = "8 settembre 2026"
+DATE = "11 settembre 2026"
 AUTHOR = "Gabriele Battaglia (IZ4APU) & ClaudIA (Claude Fable 5.1, UltraCode)"

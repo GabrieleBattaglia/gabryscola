@@ -152,11 +152,7 @@ def nuova_voce(nome, wins, ties, losses, punti_totali, partite_match):
 def posizione_in_classifica(classifica, voce):
     """La posizione, da uno, che la voce otterrebbe; None se non entra."""
     chiave = chiave_ordinamento(voce)
-    davanti = sum(
-        1
-        for altra in classifica_per_match(classifica, voce["partite_match"])
-        if chiave_ordinamento(altra) >= chiave
-    )
+    davanti = sum(1 for altra in classifica_per_match(classifica, voce["partite_match"]) if chiave_ordinamento(altra) >= chiave)
     posizione = davanti + 1
     return posizione if posizione <= CLASSIFICA_MAX_VOCI else None
 
