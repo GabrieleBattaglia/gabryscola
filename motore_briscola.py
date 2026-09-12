@@ -13,12 +13,10 @@ evento visibile della partita, e mai la carta pescata dall'avversario, a
 meno che non sia la briscola scoperta.
 """
 
-import os
 import random
-import sys
 import time
 
-from GBUtils import key, manuale
+from GBUtils import key, manuale, percorso_risorsa
 
 from gestione_dati import generate_ai_name
 from giocatore import Giocatore
@@ -116,9 +114,9 @@ class MotoreBriscola:
 
     @staticmethod
     def _percorso_guida():
-        """La guida sta accanto ai sorgenti, e dentro l'eseguibile quando e' compilato."""
-        base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(base, GUIDA)
+        """La guida sta accanto ai sorgenti, e dentro l'eseguibile quando e'
+        compilato. La ricerca sta in GBUtils, come tutte le utilita' condivise."""
+        return percorso_risorsa(GUIDA)
 
     def _mostra_guida(self):
         play_event("manuale")

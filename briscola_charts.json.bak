@@ -178,5 +178,14 @@
         "punti_totali": 194,
         "partite_match": 3,
         "data": "27/05/2026"
+    },
+    {
+        "nome": "Gabryoffice",
+        "wins": 1,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 70,
+        "partite_match": 1,
+        "data": "10/09/2026"
     }
 ]
