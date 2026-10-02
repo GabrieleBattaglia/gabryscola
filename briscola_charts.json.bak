@@ -205,14 +205,5 @@
         "punti_totali": 194,
         "partite_match": 3,
         "data": "27/05/2026"
-    },
-    {
-        "nome": "IA-Simulo",
-        "wins": 1,
-        "ties": 1,
-        "losses": 0,
-        "punti_totali": 134,
-        "partite_match": 2,
-        "data": "30/09/2026"
     }
 ]
