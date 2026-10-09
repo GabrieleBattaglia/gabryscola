@@ -126,6 +126,15 @@
         "data": "08/09/2026"
     },
     {
+        "nome": "Minibry",
+        "wins": 2,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 158,
+        "partite_match": 3,
+        "data": "09/10/2026"
+    },
+    {
         "nome": "IA-Gudaye",
         "wins": 2,
         "ties": 0,
@@ -259,6 +268,15 @@
         "punti_totali": 215,
         "partite_match": 5,
         "data": "28/05/2026"
+    },
+    {
+        "nome": "IA-Yotaye",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 209,
+        "partite_match": 5,
+        "data": "09/10/2026"
     },
     {
         "nome": "Meteobry",
