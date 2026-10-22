@@ -72,6 +72,60 @@
         "data": "10/09/2026"
     },
     {
+        "nome": "Ufficietto2",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 215,
+        "partite_match": 5,
+        "data": "28/05/2026"
+    },
+    {
+        "nome": "IA-Yotaye",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 209,
+        "partite_match": 5,
+        "data": "09/10/2026"
+    },
+    {
+        "nome": "Gigantedimesso",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 188,
+        "partite_match": 5,
+        "data": "21/10/2026"
+    },
+    {
+        "nome": "Meteobry",
+        "wins": 3,
+        "ties": 1,
+        "losses": 1,
+        "punti_totali": 327,
+        "partite_match": 5,
+        "data": "04/10/2026"
+    },
+    {
+        "nome": "IA-Webuca",
+        "wins": 3,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 258,
+        "partite_match": 5,
+        "data": "02/10/2026"
+    },
+    {
+        "nome": "Giganteallospedale",
+        "wins": 3,
+        "ties": 0,
+        "losses": 2,
+        "punti_totali": 328,
+        "partite_match": 5,
+        "data": "09/10/2026"
+    },
+    {
         "nome": "IA-Felepi",
         "wins": 2,
         "ties": 0,
@@ -225,6 +279,15 @@
         "data": "10/09/2026"
     },
     {
+        "nome": "Stellaterm",
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "punti_totali": 202,
+        "partite_match": 3,
+        "data": "22/10/2026"
+    },
+    {
         "nome": "Armonygab-G",
         "wins": 2,
         "ties": 0,
@@ -259,59 +322,5 @@
         "punti_totali": 190,
         "partite_match": 3,
         "data": "03/10/2026"
-    },
-    {
-        "nome": "Ufficietto2",
-        "wins": 3,
-        "ties": 0,
-        "losses": 0,
-        "punti_totali": 215,
-        "partite_match": 5,
-        "data": "28/05/2026"
-    },
-    {
-        "nome": "IA-Yotaye",
-        "wins": 3,
-        "ties": 0,
-        "losses": 0,
-        "punti_totali": 209,
-        "partite_match": 5,
-        "data": "09/10/2026"
-    },
-    {
-        "nome": "Gigantedimesso",
-        "wins": 3,
-        "ties": 0,
-        "losses": 0,
-        "punti_totali": 188,
-        "partite_match": 5,
-        "data": "21/10/2026"
-    },
-    {
-        "nome": "Meteobry",
-        "wins": 3,
-        "ties": 1,
-        "losses": 1,
-        "punti_totali": 327,
-        "partite_match": 5,
-        "data": "04/10/2026"
-    },
-    {
-        "nome": "IA-Webuca",
-        "wins": 3,
-        "ties": 0,
-        "losses": 1,
-        "punti_totali": 258,
-        "partite_match": 5,
-        "data": "02/10/2026"
-    },
-    {
-        "nome": "Giganteallospedale",
-        "wins": 3,
-        "ties": 0,
-        "losses": 2,
-        "punti_totali": 328,
-        "partite_match": 5,
-        "data": "09/10/2026"
     }
 ]

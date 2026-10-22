@@ -279,6 +279,15 @@
         "data": "09/10/2026"
     },
     {
+        "nome": "Gigantedimesso",
+        "wins": 3,
+        "ties": 0,
+        "losses": 0,
+        "punti_totali": 188,
+        "partite_match": 5,
+        "data": "21/10/2026"
+    },
+    {
         "nome": "Meteobry",
         "wins": 3,
         "ties": 1,
